@@ -1,0 +1,36 @@
+[project]
+name = "test-rag"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "sun", email = "dial1234567@hotmail.com" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "chromadb>=0.5.0,<0.6",
+    "httpx[socks,http2]>=0.27.0,<1",
+    "numpy<2",
+    "onnxruntime>=1.20,<1.24",
+    "python-dotenv>=1.2.3,<2",
+    "PySocks>=1.7.1,<2",
+    "scipy<=1.13.0",
+    "sentence-transformers>=3,<7",
+    "socksio>=1.0.0,<2",
+    "torch==2.2.2",
+]
+
+[project.scripts]
+test-rag = "test_rag:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+required-environments = [
+    "sys_platform == 'darwin' and platform_machine == 'x86_64'",
+    "sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "sys_platform == 'linux'  and platform_machine == 'x86_64'",
+]
+
