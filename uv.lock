@@ -1516,30 +1516,47 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
+    { name = "fastapi" },
     { name = "httpx", extra = ["http2", "socks"] },
     { name = "numpy" },
     { name = "onnxruntime" },
+    { name = "pydantic" },
     { name = "pysocks" },
     { name = "python-dotenv" },
     { name = "scipy" },
     { name = "sentence-transformers" },
     { name = "socksio" },
     { name = "torch" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[package.optional-dependencies]
+serve = [
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "uvicorn", extra = ["standard"] },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "chromadb", specifier = ">=0.5.0,<0.6" },
+    { name = "fastapi", specifier = ">=0.110,<1" },
+    { name = "fastapi", marker = "extra == 'serve'", specifier = ">=0.110,<1" },
     { name = "httpx", extras = ["socks", "http2"], specifier = ">=0.27.0,<1" },
     { name = "numpy", specifier = "<2" },
     { name = "onnxruntime", specifier = ">=1.20,<1.24" },
+    { name = "pydantic", specifier = ">=2,<3" },
+    { name = "pydantic", marker = "extra == 'serve'", specifier = ">=2,<3" },
     { name = "pysocks", specifier = ">=1.7.1,<2" },
     { name = "python-dotenv", specifier = ">=1.2.3,<2" },
     { name = "scipy", specifier = "<=1.13.0" },
     { name = "sentence-transformers", specifier = ">=3,<7" },
     { name = "socksio", specifier = ">=1.0.0,<2" },
     { name = "torch", specifier = "==2.2.2" },
+    { name = "uvicorn", extras = ["standard"], specifier = ">=0.27,<1" },
+    { name = "uvicorn", extras = ["standard"], marker = "extra == 'serve'", specifier = ">=0.27,<1" },
 ]
+provides-extras = ["serve"]
 
 [[package]]
 name = "threadpoolctl"

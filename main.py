@@ -35,14 +35,31 @@ os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", str(HF_HUB_DOWNLOAD_TIMEOUT))
 
 def _load_sentence_transformer() -> SentenceTransformer:
     last_error = None
-    candidates = [EMBEDDING_MODEL_NAME]
-    if EMBEDDING_MODEL_NAME != "shibing624/text2vec-base-chinese":
-        candidates.append("shibing624/text2vec-base-chinese")
-    candidates.append("moka-ai/m3e-base")
+    candidates: list[str] = []
+
+    # 1) 先试本地已拷贝到项目 ./models 下的绝对路径 (完全离线，不需要 cache/网络)
+    #    模型文件由 `cp_hf_cache_to_local.sh` 或 blob 解引用脚本生成
+    local_model_dirs = [
+        (EMBEDDING_MODEL_NAME, os.path.join("models", EMBEDDING_MODEL_NAME.replace("/", "__"))),
+        ("shibing624/text2vec-base-chinese", os.path.join("models", "shibing624__text2vec-base-chinese")),
+        ("moka-ai/m3e-base",                        os.path.join("models", "moka-ai__m3e-base")),
+    ]
+    for repo_id, local_path in local_model_dirs:
+        local_abs = os.path.abspath(local_path)
+        if os.path.isdir(local_abs) and os.path.isfile(os.path.join(local_abs, "config.json")):
+            if local_abs not in candidates:
+                candidates.append(local_abs)
+
+    # 2) 再试 hub 仓库名 (走 ~/.cache/huggingface 缓存，若无则联网下载)
+    for repo_id in (EMBEDDING_MODEL_NAME, "shibing624/text2vec-base-chinese", "moka-ai/m3e-base"):
+        if repo_id not in candidates:
+            candidates.append(repo_id)
 
     for model_name in candidates:
         try:
-            print(f"[INFO] 加载 Embedding 模型: {model_name}")
+            is_local = os.path.isdir(model_name)
+            label = f"本地路径 {model_name}" if is_local else f"Hub 仓库 {model_name}"
+            print(f"[INFO] 加载 Embedding 模型: {label}")
             return SentenceTransformer(
                 model_name,
                 trust_remote_code=EMBEDDING_MODEL_TRUST_REMOTE,
@@ -54,7 +71,7 @@ def _load_sentence_transformer() -> SentenceTransformer:
     raise RuntimeError(
         "所有 Embedding 模型均加载失败。请检查：\n"
         "  1. 网络 / 代理是否正常（.env 中取消 HTTPS_PROXY 注释并填写正确端口）\n"
-        "  2. 或在 .env 中设置 EMBEDDING_MODEL_NAME 为已下载的本地路径\n"
+        "  2. 或运行 `python tools/export_hf_cache_to_models.py` 导出已缓存模型到 ./models/，再离线运行\n"
         f"最后一次错误: {type(last_error).__name__}: {last_error}"
     )
 
@@ -112,20 +129,36 @@ RERANK_MODEL_NAME = os.getenv(
 
 def _load_cross_encoder() -> CrossEncoder:
     last_error = None
-    candidates = [RERANK_MODEL_NAME]
-    if RERANK_MODEL_NAME != "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1":
-        candidates.append("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1")
+    candidates: list[str] = []
+
+    local_model_dirs = [
+        (RERANK_MODEL_NAME, os.path.join("models", RERANK_MODEL_NAME.replace("/", "__"))),
+        ("cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+         os.path.join("models", "cross-encoder__mmarco-mMiniLMv2-L12-H384-v1")),
+    ]
+    for repo_id, local_path in local_model_dirs:
+        local_abs = os.path.abspath(local_path)
+        if os.path.isdir(local_abs) and os.path.isfile(os.path.join(local_abs, "config.json")):
+            if local_abs not in candidates:
+                candidates.append(local_abs)
+
+    for repo_id in (RERANK_MODEL_NAME, "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"):
+        if repo_id not in candidates:
+            candidates.append(repo_id)
 
     for model_name in candidates:
         try:
-            print(f"[INFO] 加载 Rerank 模型: {model_name}")
+            is_local = os.path.isdir(model_name)
+            label = f"本地路径 {model_name}" if is_local else f"Hub 仓库 {model_name}"
+            print(f"[INFO] 加载 Rerank 模型: {label}")
             return CrossEncoder(model_name)
         except Exception as e:
             last_error = e
             print(f"[WARN] 加载 {model_name} 失败: {type(e).__name__}: {e}")
 
     raise RuntimeError(
-        "所有 Rerank 模型均加载失败。请检查代理/网络。\n"
+        "所有 Rerank 模型均加载失败。请检查代理/网络，\n"
+        "或运行 `python tools/export_hf_cache_to_models.py` 导出已缓存模型到 ./models/。\n"
         f"最后一次错误: {type(last_error).__name__}: {last_error}"
     )
 
